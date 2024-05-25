@@ -1,0 +1,75 @@
+version: '3.8'
+services:
+  rabbit:
+    image: rabbitmq:3-management
+    ports:
+      - 5672:5672
+      - 15672:15672
+
+  dbClients:
+    image: mongo
+    ports:
+      - 30000:27017
+    volumes:
+      - dbClients:/data/db
+
+  dbEmprunts:
+    image: mongo
+    ports:
+      - 30001:27017
+    volumes:
+      - dbEmprunts:/data/db
+
+  dbLivrers:
+    image: mongo
+    ports:
+      - 30002:27017
+    volumes:
+      - dbLivrers:/data/db
+
+  api_client:
+    build: ./api_client
+    ports:
+      - 3001:3000
+    depends_on:
+      - rabbit
+      - dbClients
+    environment:
+      - URL = mongodb://dbClients:27017/dbclients
+      - PORT = 3001  
+
+  api_emprunt:
+    build: ./api_emprunt
+    ports:
+      - 3002:3000
+    depends_on:
+      - rabbit
+      - dbEmprunts
+    environment:
+      - PORT = 3002
+      - URL = mongodb://dbEmprunts:27017/dbEmprunts
+      - amqpURL = amqp://guest:guest@localhost:5672  
+
+  api_livre:
+    build: ./api_livre
+    ports:
+      - 3004:3000
+    depends_on:
+      - rabbit
+      - dbLivrers
+    environment:
+      - PORT=3004
+      - URL_MONGOOSE=mongodb://dbLivrers:27017/dblivre  
+
+  notification-service:
+    build: ./api_notification
+    ports:
+      - 3003:3000
+    depends_on:
+      - rabbit
+
+
+volumes:
+      dbClients:
+      dbEmprunts:
+      dbLivrers:
